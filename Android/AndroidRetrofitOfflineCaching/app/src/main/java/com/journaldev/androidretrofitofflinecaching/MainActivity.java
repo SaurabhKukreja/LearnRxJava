@@ -2,6 +2,7 @@ package com.journaldev.androidretrofitofflinecaching;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -13,12 +14,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Observable;
-import io.reactivex.Observer;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
 import okhttp3.Cache;
 import okhttp3.CacheControl;
 import okhttp3.Interceptor;
@@ -26,6 +21,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Call;
+import retrofit2.Callback;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -47,16 +44,40 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.textView);
         btnGetRandomJoke = findViewById(R.id.button);
 
-        setupRetrofitAndOkHttp();
+       // setupRetrofitAndOkHttp();
 
         btnGetRandomJoke.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getRandomJokeFromAPI();
+               // getRandomJokeFromAPI();
+                getRandomJokes();
 
             }
         });
 
+    }
+
+    private void getRandomJokes() {
+        APIService service = RetrofitClientInstance.getRetrofitInstance(getApplicationContext()).create(APIService.class);
+        Call<Jokes> call = service.getRandomJoke("random");
+        call.enqueue(new Callback<Jokes>() {
+            @Override
+            public void onResponse(Call<Jokes> call, retrofit2.Response<Jokes> response) {
+                try {
+                    Log.d("API_RESPONSE: ", response.body().toString());
+                    textView.setText(response.body().value);
+                }catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                //
+            }
+
+            @Override
+            public void onFailure(Call<Jokes> call, Throwable t) {
+                Toast.makeText(MainActivity.this, "Something went wrong...Please try later!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupRetrofitAndOkHttp() {
@@ -87,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void getRandomJokeFromAPI() {
+   /* public void getRandomJokeFromAPI() {
         Observable<Jokes> observable = apiService.getRandomJoke("random");
         observable.subscribeOn(Schedulers.newThread()).
                 observeOn(AndroidSchedulers.mainThread())
@@ -117,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-    }
+    }*/
 
     private Interceptor provideCacheInterceptor() {
 
@@ -178,5 +199,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+    }
+
+    public void clearData(View view) {
+        textView.setText("");
     }
 }
